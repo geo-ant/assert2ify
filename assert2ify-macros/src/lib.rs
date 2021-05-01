@@ -65,7 +65,7 @@ enum AssertionMacro {
 fn assert2_macro_with(assert2_macro_path:syn::Path, tokens : proc_macro2::TokenStream, span : Span) -> Macro {
     ///TODO HACKY WAY OF MAKING THE ASSERT2 macro path point to just assert2
     ///THIS JUST RESOLVES TO ASSERT2 without any sexy leading colons or ANYTHING
-    /// TODO: OK, the trick is to give the 
+    /// TODO: OK, the trick is to give the
     let assert2 = PathSegment {
         ident: Ident::new("assert2", span.clone()),
         arguments: PathArguments::None
@@ -87,15 +87,13 @@ fn assert2_macro_with(assert2_macro_path:syn::Path, tokens : proc_macro2::TokenS
 }
 
 impl AssertionMacro {
-    pub fn assert2ify_with(self, assert2_macro_path : syn::Path, span: Span) -> proc_macro2::TokenStream {
+    pub fn assert2ify_with(self, assert2_macro_path : syn::Path, span: Span) -> ExprMacro {
         match self {
             AssertionMacro::AssertCompare { lhs, operator,rhs } => {
-                let mac = ExprMacro {
+                ExprMacro {
                     attrs: vec![],
                     mac: assert2_macro_with(assert2_macro_path,quote!{#lhs #operator #rhs}.into(),span)
-                };
-
-                quote!{#mac}
+                }
             }
             AssertionMacro::AssertUnary { .. } => {
                 todo!()
@@ -150,10 +148,7 @@ impl Fold for Assert2Ification {
 
         match macro_expression {
             MacroExpression::Assertion(assertion) => {
-
-                let t : proc_macro2::TokenStream = assertion.assert2ify_with(self.replacement_macro_path.clone(),m_span);
-                let m : ExprMacro = syn::parse(  quote_spanned!(m_span => #t).into()             ).unwrap();
-                m
+                assertion.assert2ify_with(self.replacement_macro_path.clone(),m_span)
             }
             MacroExpression::Other(expr_macro) => {
                 expr_macro
