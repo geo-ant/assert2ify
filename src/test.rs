@@ -1,8 +1,8 @@
-use assert2_ify_macros::assert2_ify;
+use assert2ify_macros::assert2ify;
 
-#[test]
-#[assert2_ify]
-fn my_test() {
-    assert!(true);
-    assert_eq!(10,20);
-}
+// #[test]
+// #[assert2ify]
+// fn my_test() {
+//     assert!(true);
+//     assert_eq!(10,20);
+// }
