@@ -1,7 +1,8 @@
+//! this is just a module reexporting the assert! macro from assert2
+pub mod reexports;
+
+pub use assert2_ify_macros::assert2_ify;
+
+
 #[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
+mod test;
