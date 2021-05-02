@@ -26,3 +26,10 @@ fn my_test() {
 
     assert2!(let Err(_)   = result_func());
 }
+
+#[test]
+fn assert2_test() {
+    let a = true;
+    let b = false;
+    assert2!(a && (10<2));
+}
