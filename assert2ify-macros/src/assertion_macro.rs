@@ -4,13 +4,8 @@ use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
 use quote::quote;
 use std::iter::FromIterator;
+use crate::detail::is_path_for_std_assertion;
 
-
-pub struct MacroExpression {
-    // the span of the original macro
-    span : Span,
-    mac : MacExpr,
-}
 
 pub struct AssertionMacro {
     /// the span of the original assertion macro
@@ -23,6 +18,17 @@ pub struct AssertionMacro {
     /// the parsed assertion type. This contains the interesting stuff
     /// of what will be replaced
     pub mac : Assertion,
+}
+
+/// enumeration that names all the standard assertions that can
+/// be replaced with the lib
+pub enum StandardLibraryAssertion {
+    /// the assertion `assert_eq!`
+    ASSERT_EQ,
+    /// the assertion `assert_ne!`
+    ASSERT_NE,
+    /// the assertion `assert!`
+    ASSERT,
 }
 
 // todo document
@@ -41,8 +47,8 @@ pub enum Assertion {
     },
     AssertMatches {
         pat : Pat,
-        expr : Expr,
         span : Span,
+        expr : Expr,
         //TODO: optional field for additional tokens / message. CAUTION: HOW TO I parse those? Can I just parse them as expressions?
     }
 }
@@ -99,7 +105,9 @@ pub enum MacExpr {
 impl From<ExprMacro> for MacExpr {
     fn from(expr_macro: ExprMacro) -> Self {
 
-        if expr_macro.mac.path.segments.first().unwrap().ident.to_string().contains("assert_eq") {
+        println!("path = {:#?}", &expr_macro.mac.path.segments );
+
+        if is_path_for_std_assertion(& expr_macro.mac.path, StandardLibraryAssertion::ASSERT_EQ, ) {
             //see https://users.rust-lang.org/t/unable-to-parse-a-tokenstream-into-a-parsebuffer-with-the-syn-crate/44815/2
             //TODO: pass the additional arguments that assert_eq can have as well.
             //TODO: THIS GOES FOR ALL ASSERTIONS

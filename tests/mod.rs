@@ -9,7 +9,7 @@ fn result_func() -> Result<i32,String> {
 #[test]
 #[assert2ify]
 fn my_test() {
-    assert!(true);
+    ::std::assert!(true);
     let v = vec![1,2,3];
     //todo! parse messages as well
 
@@ -17,7 +17,7 @@ fn my_test() {
     {
         if 20> 19
         {
-            assert_eq!(v.len(),
+            ::std::assert_eq!(v.len(),
                        20,
                        "these {} {} {}", 1,
                        "message(s)", "are now parsed");

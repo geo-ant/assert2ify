@@ -14,6 +14,7 @@ use assert2ification::Assert2Ification;
 
 mod assert2ification;
 mod assertion_macro;
+mod detail;
 
 //TODO: https://github.com/dtolnay/syn/blob/master/examples/trace-var/trace-var/src/lib.rs
 //TODO: read this and understand how the syntax tree traversal is implemented and how I can use it
