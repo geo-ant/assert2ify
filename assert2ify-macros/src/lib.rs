@@ -15,6 +15,7 @@ use std::iter::FromIterator;
 //TODO: read this and understand how the syntax tree traversal is implemented and how I can use it
 
 /// holds the configuration of the assert macro
+#[derive(Debug,Clone,PartialEq)]
 enum Configuration {
     /// means all assertions will be replaced by calls to the
     /// assert macro of the assert2 crate
@@ -24,25 +25,37 @@ enum Configuration {
     CHECKIFY,
 }
 
+#[derive(Debug,Clone,PartialEq)]
 struct Assert2Ification {
     /// whether to replace the assertions with calls to assert! or check! of
     /// the assert2 crate
-    replacement_macro_path: syn::Path,
+    configuration: Configuration,
 }
 
 impl Assert2Ification {
     pub fn new(configuration : Configuration) -> Result<Assert2Ification,syn::Error> {
-
-        let replacement :Path = syn::parse_str(
-            match configuration {
-                Configuration::ASSERTIFY => { "::assert2ify::reexports::assert"}
-                Configuration::CHECKIFY => { "::assert2ify::reexports::check"}
-            }
-        )?;
-
          Ok(Assert2Ification {
-             replacement_macro_path: replacement,
+             configuration,
          })
+    }
+
+    pub fn assert2_macro_path_with_span(&self, span : Span) -> syn::Path {
+        match self.configuration {
+            Configuration::ASSERTIFY => {    let assert2 = PathSegment {
+                ident: Ident::new("assert2", span.clone()),
+                arguments: PathArguments::None
+            };
+
+                let assert2_segments = Punctuated::<PathSegment,syn::token::Colon2>::from_iter(vec!{assert2});
+
+                Path {
+                    leading_colon : None,
+                    segments : assert2_segments,
+                }
+            }
+
+            Configuration::CHECKIFY => {todo!()}
+        }
     }
 }
 
@@ -52,13 +65,19 @@ enum AssertionMacro {
         lhs : Expr,
         operator : syn::BinOp,
         rhs : Expr,
+        span :  Span,
+        msg : Vec<Expr>
     },
     AssertUnary {
         expr : Expr,
+        //TODO: optional field for additional tokens / message. CAUTION: HOW TO I parse those? Can I just parse them as expressions?
+        span : Span,
     },
     AssertMatches {
         pat : Pat,
         expr : Expr,
+        span : Span,
+        //TODO: optional field for additional tokens / message. CAUTION: HOW TO I parse those? Can I just parse them as expressions?
     }
 }
 
@@ -87,12 +106,12 @@ fn assert2_macro_with(assert2_macro_path:syn::Path, tokens : proc_macro2::TokenS
 }
 
 impl AssertionMacro {
-    pub fn assert2ify_with(self, assert2_macro_path : syn::Path, span: Span) -> ExprMacro {
+    pub fn assert2ify_with(self, assert2_macro_path : syn::Path) -> ExprMacro {
         match self {
-            AssertionMacro::AssertCompare { lhs, operator,rhs } => {
+            AssertionMacro::AssertCompare { lhs, operator,rhs, span, msg } => {
                 ExprMacro {
                     attrs: vec![],
-                    mac: assert2_macro_with(assert2_macro_path,quote!{#lhs #operator #rhs}.into(),span)
+                    mac: assert2_macro_with(assert2_macro_path,quote!{#lhs #operator #rhs, #(#msg),* }.into(),span)
                 }
             }
             AssertionMacro::AssertUnary { .. } => {
@@ -116,12 +135,16 @@ impl From<ExprMacro> for MacroExpression {
 
         if expr_macro.mac.path.segments.first().unwrap().ident.to_string().contains("assert_eq") {
             //see https://users.rust-lang.org/t/unable-to-parse-a-tokenstream-into-a-parsebuffer-with-the-syn-crate/44815/2
+            //TODO: pass the additional arguments that assert_eq can have as well.
+            //TODO: THIS GOES FOR ALL ASSERTIONS
             let expressions = expr_macro.mac.parse_body_with(Punctuated::<Expr,syn::Token![,]>::parse_terminated).unwrap();
 
             Self::Assertion(AssertionMacro::AssertCompare {
                 lhs : expressions[0].clone(),
                 operator : BinOp::Eq(syn::token::EqEq { spans: [expr_macro.span();2] }),
                 rhs : expressions[1].clone(),
+                span : expr_macro.span(),
+                msg : expressions.iter().skip(2).cloned().collect()
             })
         } else {
             Self::Other(expr_macro)
@@ -148,7 +171,10 @@ impl Fold for Assert2Ification {
 
         match macro_expression {
             MacroExpression::Assertion(assertion) => {
-                assertion.assert2ify_with(self.replacement_macro_path.clone(),m_span)
+                //todo! get the replacement path for the span
+                //todo: then we don't need the extra span argument anymore and can just use the
+                //replacement path span or the token span that we have anyways
+                assertion.assert2ify_with(self.assert2_macro_path_with_span(m_span.clone()).clone())
             }
             MacroExpression::Other(expr_macro) => {
                 expr_macro

@@ -6,5 +6,10 @@ use assert2::assert as assert2;
 #[assert2ify]
 fn my_test() {
     assert!(true);
-    assert_eq!(10,20);
+    let v = vec![1,2,3];
+    //todo! parse messages as well
+    assert_eq!(v.len(),
+               20,
+               "these {} {} {}", 4,
+               "things", "are now parsed");
 }
