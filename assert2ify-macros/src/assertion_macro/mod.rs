@@ -153,6 +153,7 @@ impl MacroExpression {
 
 impl TryFrom<ExprMacro> for MacroExpression {
     type Error = syn::Error;
+    /// TODO DOCUMENT
     fn try_from(expr_macro: ExprMacro) -> Result<Self, Self::Error> {
         // get the span and parse the macro arguments
         let span = expr_macro.span();

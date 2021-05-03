@@ -102,19 +102,27 @@ impl Fold for Assert2Ification {
     fn fold_expr_macro(&mut self, expr_macro: ExprMacro) -> ExprMacro {
         println!("macro path = '{:?}'", &expr_macro.mac.path);
 
-        let macro_expression = MacroExpression::try_from(expr_macro).expect("Invalid syntax encountered. Try compiling your code without this attribute and fix the errors. Then add the attribute again");
-        let span = macro_expression.span();
+        let macro_parse_result = MacroExpression::try_from(expr_macro.clone());
+        // we check whether the macro could be parsed. If not, this indicates a syntax error in the
+        // original code like an assert! with no arguments or an assert_eq! with just one
+        // in this case we return the original macro and let the compiler give an error so the user
+        // can fix it
+        if let Ok(macro_expression) = macro_parse_result {
+            let span = macro_expression.span();
 
-        match macro_expression {
-            MacroExpression::Assertion(assertion) => {
-                assertion.assert2ify_with(self.assert2_macro_path_with_span(span))
+            match macro_expression {
+                MacroExpression::Assertion(assertion) => {
+                    assertion.assert2ify_with(self.assert2_macro_path_with_span(span))
+                }
+                MacroExpression::Other(expr_macro) => {
+                    // see https://github.com/dtolnay/syn/blob/master/examples/trace-var/trace-var/src/lib.rs
+                    // I think we do it like this, to keep on visiting the nodes recursively even if we
+                    // are inside another macro invocation
+                    fold::fold_expr_macro(self, expr_macro)
+                }
             }
-            MacroExpression::Other(expr_macro) => {
-                // see https://github.com/dtolnay/syn/blob/master/examples/trace-var/trace-var/src/lib.rs
-                // I think we do it like this, to keep on visiting the nodes recursively even if we
-                // are inside another macro invocation
-                fold::fold_expr_macro(self, expr_macro)
-            }
+        } else {
+            expr_macro
         }
     }
 }
