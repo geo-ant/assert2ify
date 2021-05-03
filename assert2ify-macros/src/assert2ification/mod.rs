@@ -100,7 +100,6 @@ impl Parse for Assert2Ification {
 
 impl Fold for Assert2Ification {
     fn fold_expr_macro(&mut self, expr_macro: ExprMacro) -> ExprMacro {
-        println!("macro path = '{:?}'", &expr_macro.mac.path);
 
         let macro_parse_result = MacroExpression::try_from(expr_macro.clone());
         // we check whether the macro could be parsed. If not, this indicates a syntax error in the
