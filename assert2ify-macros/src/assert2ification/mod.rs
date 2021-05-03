@@ -35,23 +35,47 @@ impl Assert2Ification {
     }
 
     pub fn assert2_macro_path_with_span(&self, span: Span) -> syn::Path {
+        let assert2ify = PathSegment {
+            ident: Ident::new("assert2ify", span),
+            arguments: PathArguments::None,
+        };
+
+        let reexports = PathSegment {
+            ident: Ident::new("reexports", span),
+            arguments: PathArguments::None,
+        };
+
+
         match self.configuration {
             Configuration::ASSERTIFY => {
-                //TODO clean this up and make it use the reexported path
-                let assert2 = PathSegment {
-                    ident: Ident::new("assert2", span.clone()),
+
+                let assert = PathSegment {
+                    ident: Ident::new("assert", span),
                     arguments: PathArguments::None,
                 };
 
-                let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec! {assert2});
+                let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec! {assert2ify, reexports, assert});
 
                 Path {
-                    leading_colon: None,
+                    leading_colon: Some(syn::token::Colon2 { spans : [span;2]} ),
                     segments: assert2_segments,
                 }
             }
 
-            Configuration::CHECKIFY => { todo!() }
+            Configuration::CHECKIFY => {
+                let check = PathSegment {
+                    ident: Ident::new("check", span),
+                    arguments: PathArguments::None,
+                };
+
+                let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec! {assert2ify, reexports, check});
+
+                Path {
+                    leading_colon: Some(syn::token::Colon2 { spans : [span;2]} ),
+                    segments: assert2_segments,
+                }
+
+            }
         }
     }
 }

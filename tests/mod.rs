@@ -7,7 +7,7 @@ fn result_func() -> Result<i32,String> {
 }
 
 #[test]
-#[assert2ify]
+#[assert2ify(check)]
 fn my_test() {
     //::std::assert!(true);
     let v = vec![1,2,3];

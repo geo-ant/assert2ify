@@ -206,25 +206,10 @@ pub enum Assertion {
 }
 
 pub fn assert2_macro_with(assert2_macro_path: syn::Path, tokens: proc_macro2::TokenStream, span: Span) -> Macro {
-    ///TODO HACKY WAY OF MAKING THE ASSERT2 macro path point to just assert2
-    ///THIS JUST RESOLVES TO ASSERT2 without any sexy leading colons or ANYTHING
-    /// TODO: OK, the trick is to give the
-    let assert2 = PathSegment {
-        ident: Ident::new("assert2", span.clone()),
-        arguments: PathArguments::None,
-    };
-
-    let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec! {assert2});
-
-    let assert2_path = Path {
-        leading_colon: None,
-        segments: assert2_segments,
-    };
-
     Macro {
-        path: assert2_path,
-        bang_token: syn::token::Bang { spans: [span.clone(); 1] },
-        delimiter: MacroDelimiter::Paren(syn::token::Paren { span: span.clone() }),
+        path: assert2_macro_path,
+        bang_token: syn::token::Bang { spans: [span; 1] },
+        delimiter: MacroDelimiter::Paren(syn::token::Paren { span }),
         tokens,
     }
 }
