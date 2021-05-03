@@ -9,7 +9,7 @@ fn result_func() -> Result<i32,String> {
 #[test]
 #[assert2ify]
 fn my_test() {
-    ::std::assert!(true);
+    //::std::assert!(true);
     let v = vec![1,2,3];
     //todo! parse messages as well
 
@@ -27,9 +27,3 @@ fn my_test() {
     assert2!(let Err(_)   = result_func());
 }
 
-#[test]
-fn assert2_test() {
-    let a = true;
-    let b = false;
-    assert2!(a && (10<2));
-}
