@@ -36,7 +36,7 @@ impl AssertionMacro {
     }
 
     //TODO document
-    fn assert2ify_with(self, assert2_macro_path: syn::Path) -> ExprMacro {
+    pub fn assert2ify_with(self, assert2_macro_path: syn::Path) -> ExprMacro {
         let info_args = self.info_args;
 
         match self.assertion {
@@ -112,6 +112,15 @@ impl Assrt {
 pub enum MacroExpression {
     Assertion(AssertionMacro),
     Other(ExprMacro),
+}
+
+impl Spanned for MacroExpression {
+    fn span(&self) -> Span {
+        match self {
+            MacroExpression::Assertion(ass) => {ass.span}
+            MacroExpression::Other(mac) => {mac.span()}
+        }
+    }
 }
 
 

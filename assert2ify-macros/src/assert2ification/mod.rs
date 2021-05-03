@@ -4,9 +4,10 @@ use syn::fold::Fold;
 use syn::parse::{Parse, ParseBuffer};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
+use std::convert::TryFrom;
 
 
-use crate::assertion_macro::MacExpr;
+use crate::assertion_macro::{MacExpr, MacroExpression};
 use std::iter::FromIterator;
 
 /// holds the configuration of the assert macro
@@ -48,7 +49,6 @@ impl Assert2Ification {
 
         match self.configuration {
             Configuration::ASSERTIFY => {
-
                 let assert = PathSegment {
                     ident: Ident::new("assert", span),
                     arguments: PathArguments::None,
@@ -57,7 +57,7 @@ impl Assert2Ification {
                 let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec! {assert2ify, reexports, assert});
 
                 Path {
-                    leading_colon: Some(syn::token::Colon2 { spans : [span;2]} ),
+                    leading_colon: Some(syn::token::Colon2 { spans: [span; 2] }),
                     segments: assert2_segments,
                 }
             }
@@ -71,10 +71,9 @@ impl Assert2Ification {
                 let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec! {assert2ify, reexports, check});
 
                 Path {
-                    leading_colon: Some(syn::token::Colon2 { spans : [span;2]} ),
+                    leading_colon: Some(syn::token::Colon2 { spans: [span; 2] }),
                     segments: assert2_segments,
                 }
-
             }
         }
     }
@@ -103,17 +102,14 @@ impl Fold for Assert2Ification {
     fn fold_expr_macro(&mut self, expr_macro: ExprMacro) -> ExprMacro {
         println!("macro path = '{:?}'", &expr_macro.mac.path);
 
-        let m_span = expr_macro.span();
-        let macro_expression = MacExpr::from(expr_macro);
+        let macro_expression = MacroExpression::try_from(expr_macro).expect("Invalid syntax encountered. Try compiling your code without this attribute and fix the errors. Then add the attribute again");
+        let span = macro_expression.span();
 
         match macro_expression {
-            MacExpr::Assertion(assertion) => {
-                //todo! get the replacement path for the span
-                //todo: then we don't need the extra span argument anymore and can just use the
-                //replacement path span or the token span that we have anyways
-                assertion.assert2ify_with(self.assert2_macro_path_with_span(m_span.clone()).clone())
+            MacroExpression::Assertion(assertion) => {
+                assertion.assert2ify_with(self.assert2_macro_path_with_span(span))
             }
-            MacExpr::Other(expr_macro) => {
+            MacroExpression::Other(expr_macro) => {
                 // see https://github.com/dtolnay/syn/blob/master/examples/trace-var/trace-var/src/lib.rs
                 // I think we do it like this, to keep on visiting the nodes recursively even if we
                 // are inside another macro invocation
