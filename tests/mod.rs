@@ -1,10 +1,7 @@
 use assert2ify::assert2ify;
 
-use assert2::assert as assert2;
 
-fn result_func() -> Result<Option<i32>,String> {
-    Ok(Some(42))
-}
+
 
 #[test]
 #[assert2ify]

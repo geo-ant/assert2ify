@@ -1,14 +1,8 @@
 use proc_macro::TokenStream;
 
-use proc_macro2::Span;
-use quote::{quote, quote_spanned};
-use syn::{BinOp, Error, Expr, ExprMacro, Ident, ItemFn, Macro, MacroDelimiter, parse_macro_input, Pat, Path, PathArguments, PathSegment, Token};
-use syn::fold::{self, Fold};
-use syn::group::Parens;
-use syn::parse::{Parse, ParseBuffer};
-use syn::punctuated::Punctuated;
-use syn::spanned::Spanned;
-use syn::token::Token;
+use quote::{quote};
+use syn::{ ItemFn, parse_macro_input};
+use syn::fold::{Fold};
 
 use assert2ification::Assert2Ification;
 

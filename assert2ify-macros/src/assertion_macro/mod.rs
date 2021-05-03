@@ -1,12 +1,10 @@
-use proc_macro2::{Ident, Span};
-use syn::{BinOp, Expr, ExprMacro, Macro, MacroDelimiter, Pat, Path, PathArguments, PathSegment, Attribute};
+use proc_macro2::{ Span};
+use syn::{ Expr, ExprMacro, Macro, MacroDelimiter, Pat, Attribute};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use quote::{quote, quote_spanned};
-use std::iter::FromIterator;
-use crate::detail::{infer_macro_kind_from_path, is_path_for_std_assertion};
+use quote::{quote_spanned};
+use crate::detail::{infer_macro_kind_from_path};
 use std::convert::TryFrom;
-use std::fmt::Error;
 
 
 pub struct AssertionMacro {
@@ -43,7 +41,7 @@ impl AssertionMacro {
             Assertion::AssertBinary { lhs, operator, rhs } => {
                 ExprMacro {
                     attrs: self.attrs,
-                    mac: assert2_macro_with(assert2_macro_path, quote_spanned! {self.span => #lhs #operator #rhs, #(#info_args),* }.into(), self.span),
+                    mac: assert2_macro_with(assert2_macro_path, quote_spanned! {self.span => #lhs #operator #rhs, #(#info_args),* }, self.span),
                 }
             }
             Assertion::AssertMatches { .. } => {
@@ -52,7 +50,7 @@ impl AssertionMacro {
             Assertion::AssertGeneral { expr } => {
                 ExprMacro {
                     attrs: self.attrs,
-                    mac: assert2_macro_with(assert2_macro_path, quote_spanned! {self.span => #expr, #(#info_args),* }.into(), self.span),
+                    mac: assert2_macro_with(assert2_macro_path, quote_spanned! {self.span => #expr, #(#info_args),* }, self.span),
                 }
             }
         }
@@ -135,19 +133,6 @@ impl MacroExpression {
     pub fn new_other(other: ExprMacro) -> Self {
         Self::Other(other)
     }
-
-
-    //TODO DOCUMENT
-    pub fn assert2ify_with(self, assert2_macro_path: syn::Path) -> ExprMacro {
-        match self {
-            MacroExpression::Assertion(assertion) => {
-                assertion.assert2ify_with(assert2_macro_path)
-            }
-            MacroExpression::Other(expr_macro) => {
-                expr_macro
-            }
-        }
-    }
 }
 
 
@@ -166,7 +151,7 @@ impl TryFrom<ExprMacro> for MacroExpression {
             // the arguments inside assert_eq!(...) or assert_ne!(...)
             // split off the arguments one by one and collect the rest as the message / info arguments
             let lhs = macro_arguments.next().ok_or_else(||create_compile_error("Too few arguments. Binary assertion like assert_eq! or assert_ne! must have at least two arguments"))?;
-            let operator = macro_kind.binary_operator(span.clone()).expect("Getting the binary operator for a binary assertion should return Some result");
+            let operator = macro_kind.binary_operator(span).expect("Getting the binary operator for a binary assertion should return Some result");
             let rhs = macro_arguments.next().ok_or_else(||create_compile_error("Too few arguments. Binary assertion like assert_eq! or assert_ne! must have at least two arguments"))?;
             let info_args: Vec<Expr> = macro_arguments.collect();
             Ok(Self::new_assertion(AssertionMacro::new(Assertion::new_binary(lhs, operator, rhs), span, info_args, expr_macro.attrs)))
@@ -178,7 +163,7 @@ impl TryFrom<ExprMacro> for MacroExpression {
             Ok(Self::new_assertion(AssertionMacro::new(Assertion::new_assert(expr), span, info_args, expr_macro.attrs)))
         } else {
             // no assertions
-            Ok(MacroExpression::Other(expr_macro))
+            Ok(MacroExpression::new_other(expr_macro))
         }
     }
 }
