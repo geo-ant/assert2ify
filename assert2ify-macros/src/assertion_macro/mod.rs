@@ -19,14 +19,14 @@ pub struct AssertionMacro {
     pub info_args: Vec<Expr>,
     /// the parsed assertion type. This contains the interesting stuff
     /// of what will be replaced
-    pub assertion: Assrt,
+    pub assertion: Assertion,
     /// the vector of attributes carried over from the macro
     pub attrs: Vec<Attribute>,
 }
 
 impl AssertionMacro {
     /// Convenience constructor
-    fn new(assrt: Assrt, span: Span, info_args: Vec<Expr>, attrs: Vec<Attribute>) -> Self {
+    fn new(assrt: Assertion, span: Span, info_args: Vec<Expr>, attrs: Vec<Attribute>) -> Self {
         Self {
             assertion: assrt,
             span,
@@ -40,16 +40,16 @@ impl AssertionMacro {
         let info_args = self.info_args;
 
         match self.assertion {
-            Assrt::AssertBinary { lhs, operator, rhs } => {
+            Assertion::AssertBinary { lhs, operator, rhs } => {
                 ExprMacro {
                     attrs: self.attrs,
                     mac: assert2_macro_with(assert2_macro_path, quote_spanned! {self.span => #lhs #operator #rhs, #(#info_args),* }.into(), self.span),
                 }
             }
-            Assrt::AssertMatches { .. } => {
+            Assertion::AssertMatches { .. } => {
                 todo!()
             }
-            Assrt::AssertGeneral { expr } => {
+            Assertion::AssertGeneral { expr } => {
                 ExprMacro {
                     attrs: self.attrs,
                     mac: assert2_macro_with(assert2_macro_path, quote_spanned! {self.span => #expr, #(#info_args),* }.into(), self.span),
@@ -61,7 +61,7 @@ impl AssertionMacro {
 
 /// An intermediate structure which helps parsing assert use cases and variants
 /// from the std lib and can translate them into assert2 assertions.
-pub enum Assrt {
+pub enum Assertion {
     /// The binary assertions `std::assert_eq!` and `std::assert_ne`
     /// Those are transalated into the equivalent assertion of the assert2 crate
     AssertBinary {
@@ -89,7 +89,7 @@ pub enum Assrt {
     },
 }
 
-impl Assrt {
+impl Assertion {
     /// Convenience constructor for binary assertions
     pub fn new_binary(lhs: Expr, operator: syn::BinOp, rhs: Expr) -> Self {
         Self::AssertBinary {
@@ -168,13 +168,13 @@ impl TryFrom<ExprMacro> for MacroExpression {
             let operator = macro_kind.binary_operator(span.clone()).expect("Getting the binary operator for a binary assertion should return Some result");
             let rhs = macro_arguments.next().ok_or_else(||create_compile_error("Too few arguments. Binary assertion like assert_eq! or assert_ne! must have at least two arguments"))?;
             let info_args: Vec<Expr> = macro_arguments.collect();
-            Ok(Self::new_assertion(AssertionMacro::new(Assrt::new_binary(lhs, operator, rhs), span, info_args, expr_macro.attrs)))
+            Ok(Self::new_assertion(AssertionMacro::new(Assertion::new_binary(lhs, operator, rhs), span, info_args, expr_macro.attrs)))
         } else if macro_kind.is_assertion() {
             // unary assertions:
             println!("TODO: PARSE assert!(matches!(...)) CORRECTLY!");
             let expr = macro_arguments.next().ok_or_else(||create_compile_error("Too few arguments. Assertion must have at least one argument"))?;
             let info_args: Vec<Expr> = macro_arguments.collect();
-            Ok(Self::new_assertion(AssertionMacro::new(Assrt::new_assert(expr),span,info_args,expr_macro.attrs)))
+            Ok(Self::new_assertion(AssertionMacro::new(Assertion::new_assert(expr), span, info_args, expr_macro.attrs)))
         } else {
             // no assertions
             Ok(MacroExpression::Other(expr_macro))
@@ -183,90 +183,13 @@ impl TryFrom<ExprMacro> for MacroExpression {
 }
 
 
-/// enumeration that names all the standard assertions that can
-/// be replaced with the lib
-#[derive(Debug, Copy, Clone, PartialEq)]
-pub enum StandardLibraryAssertion {
-    /// the assertion `assert_eq!`
-    AssertEq,
-    /// the assertion `assert_ne!`
-    AssertNe,
-    /// the assertion `assert!`
-    Assert,
-}
 
-// todo document
-pub enum Assertion {
-    AssertCompare {
-        lhs: Expr,
-        operator: syn::BinOp,
-        rhs: Expr,
-        span: Span,
-        msg: Vec<Expr>,
-    },
-    AssertUnary {
-        expr: Expr,
-    },
-    AssertMatches {
-        pat: Pat,
-        span: Span,
-        expr: Expr,
-    },
-}
-
+///TODO DOCUMENT
 pub fn assert2_macro_with(assert2_macro_path: syn::Path, tokens: proc_macro2::TokenStream, span: Span) -> Macro {
     Macro {
         path: assert2_macro_path,
         bang_token: syn::token::Bang { spans: [span; 1] },
         delimiter: MacroDelimiter::Paren(syn::token::Paren { span }),
         tokens,
-    }
-}
-
-impl Assertion {
-    pub fn assert2ify_with(self, assert2_macro_path: syn::Path) -> ExprMacro {
-        match self {
-            Assertion::AssertCompare { lhs, operator, rhs, span, msg } => {
-                ExprMacro {
-                    attrs: vec![],
-                    mac: assert2_macro_with(assert2_macro_path, quote! {#lhs #operator #rhs, #(#msg),* }.into(), span),
-                }
-            }
-            Assertion::AssertUnary { .. } => {
-                todo!()
-            }
-            Assertion::AssertMatches { .. } => {
-                todo!()
-            }
-        }
-    }
-}
-
-// todo document
-pub enum MacExpr {
-    Assertion(Assertion),
-    Other(ExprMacro),
-}
-
-impl From<ExprMacro> for MacExpr {
-    fn from(expr_macro: ExprMacro) -> Self {
-        println!("path = {:#?}", &expr_macro.mac.path.segments);
-
-        if is_path_for_std_assertion(&expr_macro.mac.path, StandardLibraryAssertion::AssertEq) {
-            //see https://users.rust-lang.org/t/unable-to-parse-a-tokenstream-into-a-parsebuffer-with-the-syn-crate/44815/2
-            //TODO: pass the additional arguments that assert_eq can have as well.
-            //TODO: THIS GOES FOR ALL ASSERTIONS
-            let expressions = expr_macro.mac.parse_body_with(Punctuated::<Expr, syn::Token![,]>::parse_terminated).unwrap();
-
-            Self::Assertion(Assertion::AssertCompare {
-                lhs: expressions[0].clone(),
-                operator: BinOp::Eq(syn::token::EqEq { spans: [expr_macro.span(); 2] }),
-                rhs: expressions[1].clone(),
-                span: expr_macro.span(),
-                msg: expressions.iter().skip(2).cloned().collect(),
-            })
-        } else {
-            Self::Other(expr_macro)
-        }
     }
 }

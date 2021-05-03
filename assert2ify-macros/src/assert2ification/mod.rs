@@ -7,7 +7,7 @@ use syn::spanned::Spanned;
 use std::convert::TryFrom;
 
 
-use crate::assertion_macro::{MacExpr, MacroExpression};
+use crate::assertion_macro::{MacroExpression};
 use std::iter::FromIterator;
 
 /// holds the configuration of the assert macro

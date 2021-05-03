@@ -1,4 +1,3 @@
-use crate::assertion_macro::StandardLibraryAssertion;
 use proc_macro2::Span;
 use syn::{BinOp, Path};
 
@@ -26,6 +25,21 @@ pub fn is_path_for_std_assertion(path : &syn::Path, assertion : StandardLibraryA
     (segments.len() == 1 && segments[0] == assertion_name) || (segments.len()==2 && segments[0] == "std" && segments[1] == assertion_name)
 }
 
+/// enumeration that names all the standard assertions that can
+/// be handled with this crate
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum StandardLibraryAssertion {
+    /// the assertion `assert_eq!`
+    AssertEq,
+    /// the assertion `assert_ne!`
+    AssertNe,
+    /// the assertion `assert!`
+    Assert,
+}
+
+/// A helper enumeration that helps us identify which kind of macro we
+/// are dealing with. Either an assertion from the standard libary
+/// or anything else
 pub enum MacroKind {
     Assertion(StandardLibraryAssertion),
     /// any other kind of macro
@@ -112,10 +126,10 @@ pub fn infer_macro_kind_from_path(path : &syn::Path) -> MacroKind {
     if segments.len() == 1 {
         macro_kind(&segments[0])
     } else if segments.len() == 2 {
-        if segments[0] != "std" {
-            MacroKind::Other
-        } else {
+        if segments[0] == "std" {
             macro_kind(&segments[1])
+        } else {
+            MacroKind::Other
         }
     } else {
         MacroKind::Other
