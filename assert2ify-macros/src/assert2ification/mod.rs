@@ -41,11 +41,10 @@ impl Assert2Ification {
             arguments: PathArguments::None,
         };
 
-        let reexports = PathSegment {
-            ident: Ident::new("reexports", span),
+        let assertions = PathSegment {
+            ident: Ident::new("assertions", span),
             arguments: PathArguments::None,
         };
-
 
         match self.configuration {
             Configuration::ASSERTIFY => {
@@ -54,7 +53,7 @@ impl Assert2Ification {
                     arguments: PathArguments::None,
                 };
 
-                let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec! {assert2ify, reexports, assert});
+                let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec! {assert2ify, assertions, assert});
 
                 Path {
                     leading_colon: Some(syn::token::Colon2 { spans: [span; 2] }),
@@ -68,7 +67,7 @@ impl Assert2Ification {
                     arguments: PathArguments::None,
                 };
 
-                let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec! {assert2ify, reexports, check});
+                let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec! {assert2ify, assertions, check});
 
                 Path {
                     leading_colon: Some(syn::token::Colon2 { spans: [span; 2] }),

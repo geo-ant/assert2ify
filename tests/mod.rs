@@ -1,8 +1,6 @@
 use assert2ify::assert2ify;
 
 
-
-
 #[test]
 #[assert2ify]
 fn my_test() {
@@ -25,7 +23,7 @@ fn my_test() {
 }
 
 #[test]
-#[assert2ify]
+#[assert2ify(check)]
 fn my_test2() {
     //::std::assert!(true);
     let v = vec![1,2,3];
@@ -36,8 +34,19 @@ fn my_test2() {
         if 20> 19
         {
             assert!(v.len()>20);
+            assert!(v.len()<2);
         }
     }
-
-    //assert2!(let Err(Some(_))   = result_func());
 }
+
+use assert2::assert as assert2;
+use assert2::let_assert;
+
+#[test]
+//#[assert2ify(check)]
+fn my_test3() {
+    //::std::assert!(true);
+
+    assert2!(let Ok(_) | Err(1) = Vec::<i32>::new().first().ok_or(&1));
+}
+

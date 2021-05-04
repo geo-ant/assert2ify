@@ -18,7 +18,10 @@ pub enum StandardLibraryAssertion {
 /// are dealing with. Either an assertion from the standard libary
 /// or anything else
 pub enum MacroKind {
+    /// any kind of assertion from the std lib
     Assertion(StandardLibraryAssertion),
+    /// the std::matches! macro from the std lib
+    Matches,
     /// any other kind of macro
     Other,
 }
@@ -35,6 +38,7 @@ impl MacroKind {
     pub fn is_assertion(&self) -> bool {
         match self {
             Self::Assertion(_) => {true}
+            Self::Matches => {false}
             Self::Other => {false}
         }
     }
@@ -46,6 +50,7 @@ impl MacroKind {
             Self::Assertion(StandardLibraryAssertion::AssertEq) => {true}
             Self::Assertion(StandardLibraryAssertion::AssertNe) => {true}
             Self::Assertion(StandardLibraryAssertion::Assert) => {false}
+            Self::Matches => {false}
             Self::Other => {false}
         }
     }
@@ -63,12 +68,13 @@ impl MacroKind {
             Self::Assertion(StandardLibraryAssertion::AssertEq) => { Some(BinOp::Eq(syn::token::EqEq { spans: [span;2] }))}
             Self::Assertion(StandardLibraryAssertion::AssertNe) => {Some(BinOp::Ne(syn::token::Ne { spans: [span;2] }))}
             Self::Assertion(StandardLibraryAssertion::Assert) => { None}
+            Self::Matches => {None}
             Self::Other => { None}
         }
     }
 }
 
-/// Using the path from the macro infer whether it is `assert_eq!`, `assert_ne!`, `assert!` or
+/// Using the path from the macro infer whether it is `assert_eq!`, `assert_ne!`, `assert!`, `matches!` or
 /// some entirely different macro.
 /// # Arguments
 /// * `path` the path in question. If the path begins with ::std or std, the next segment of the
@@ -76,8 +82,8 @@ impl MacroKind {
 /// # Return
 /// The kind of assertion
 /// # Caveat
-/// If `assert!` and the assertion macros in scope do not point to the standard library asserts,
-/// then we have to way to check that. They will be classified as std asserts as well.
+/// If `assert!` and the other macros in scope do not point to the standard library asserts,
+/// then we have to way to check that. They will be classified as std asserts/matches as well.
 /// If the std library was used as something else, then there is also no way to check that...
 pub fn infer_macro_kind_from_path(path : &syn::Path) -> MacroKind {
 
@@ -88,6 +94,7 @@ pub fn infer_macro_kind_from_path(path : &syn::Path) -> MacroKind {
         let assert_eq = "assert_eq";
         let assert_ne = "assert_ne";
         let assert = "assert";
+        let matches = "matches";
 
         if ident == assert_eq {
             MacroKind::from(StandardLibraryAssertion::AssertEq)
@@ -95,6 +102,8 @@ pub fn infer_macro_kind_from_path(path : &syn::Path) -> MacroKind {
             MacroKind::from(StandardLibraryAssertion::AssertNe)
         } else if ident == assert {
             MacroKind::from(StandardLibraryAssertion::Assert)
+        }else if ident == matches {
+            MacroKind::Matches
         } else {
             MacroKind::Other
         }
