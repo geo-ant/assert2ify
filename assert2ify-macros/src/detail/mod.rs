@@ -1,5 +1,6 @@
 use proc_macro2::Span;
-use syn::{BinOp};
+use syn::{BinOp, ExprAssign, Expr};
+
 
 
 /// enumeration that names all the standard assertions that can
@@ -20,8 +21,6 @@ pub enum StandardLibraryAssertion {
 pub enum MacroKind {
     /// any kind of assertion from the std lib
     Assertion(StandardLibraryAssertion),
-    /// the std::matches! macro from the std lib
-    Matches,
     /// any other kind of macro
     Other,
 }
@@ -38,7 +37,6 @@ impl MacroKind {
     pub fn is_assertion(&self) -> bool {
         match self {
             Self::Assertion(_) => {true}
-            Self::Matches => {false}
             Self::Other => {false}
         }
     }
@@ -50,7 +48,6 @@ impl MacroKind {
             Self::Assertion(StandardLibraryAssertion::AssertEq) => {true}
             Self::Assertion(StandardLibraryAssertion::AssertNe) => {true}
             Self::Assertion(StandardLibraryAssertion::Assert) => {false}
-            Self::Matches => {false}
             Self::Other => {false}
         }
     }
@@ -68,7 +65,6 @@ impl MacroKind {
             Self::Assertion(StandardLibraryAssertion::AssertEq) => { Some(BinOp::Eq(syn::token::EqEq { spans: [span;2] }))}
             Self::Assertion(StandardLibraryAssertion::AssertNe) => {Some(BinOp::Ne(syn::token::Ne { spans: [span;2] }))}
             Self::Assertion(StandardLibraryAssertion::Assert) => { None}
-            Self::Matches => {None}
             Self::Other => { None}
         }
     }
@@ -94,7 +90,6 @@ pub fn infer_macro_kind_from_path(path : &syn::Path) -> MacroKind {
         let assert_eq = "assert_eq";
         let assert_ne = "assert_ne";
         let assert = "assert";
-        let matches = "matches";
 
         if ident == assert_eq {
             MacroKind::from(StandardLibraryAssertion::AssertEq)
@@ -102,8 +97,6 @@ pub fn infer_macro_kind_from_path(path : &syn::Path) -> MacroKind {
             MacroKind::from(StandardLibraryAssertion::AssertNe)
         } else if ident == assert {
             MacroKind::from(StandardLibraryAssertion::Assert)
-        }else if ident == matches {
-            MacroKind::Matches
         } else {
             MacroKind::Other
         }
@@ -119,5 +112,31 @@ pub fn infer_macro_kind_from_path(path : &syn::Path) -> MacroKind {
         }
     } else {
         MacroKind::Other
+    }
+}
+
+/// This function extracts the identifiers (lhs, rhs) out of an assignment operation lhs = rhs.
+/// If the left and right hand side are not identifiers, then this returns None.
+pub fn idents_from_assign_expression(assignment: &ExprAssign) -> Option<(syn::Ident, syn::Ident)> {
+    if let (Some(lhs), Some(rhs)) = (ident_from_box_expr(assignment.left.clone()), ident_from_box_expr(assignment.right.clone())) {
+        Some((lhs,rhs))
+    } else {
+        None
+    }
+}
+
+/// helper function to extract an identifier from an expression IFF the expression
+/// is a path of length exactly one. Then this single path segment is returned as the
+/// identifier. Otherwise None is returned.
+fn ident_from_box_expr(expr : Box<Expr>) -> Option<syn::Ident> {
+    match *expr {
+        syn::Expr::Path(syn::ExprPath{ref path, ..}) => {
+            if path.segments.len() ==1 {
+                Some(path.segments[0].ident.clone())
+            } else {
+                None
+            }
+        }
+        _ => {None}
     }
 }
