@@ -2,12 +2,10 @@ use assert2ify::assert2ify;
 mod logic;
 
 #[test]
+#[should_panic(expected = "check failed")]
 #[assert2ify(check, crate = assert2ify)]
-fn my_test() {
-    //::std::assert!(true);
+pub(crate) fn test_assertion_is_replaced_in_nested_code() {
     let v = vec![1, 2, 3];
-    //todo! parse messages as well
-
     for _ in 1..10
     {
         if 20 > 19
