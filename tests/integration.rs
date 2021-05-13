@@ -2,10 +2,10 @@ use assert2ify::assert2ify;
 
 mod logic;
 
+#[assert2ify(check, crate = assert2ify)]
 #[test]
 #[should_panic(expected = "check failed")]
-#[assert2ify(check, crate = assert2ify)]
-pub(crate) fn test_assertion_is_replaced_in_nested_code() {
+pub(crate) fn assertion_is_replaced_in_nested_code() {
     let v = vec![1, 2, 3];
     for _ in 1..10
     {
@@ -19,8 +19,8 @@ pub(crate) fn test_assertion_is_replaced_in_nested_code() {
     }
 }
 
-#[test]
 #[assert2ify(check)]
+#[test]
 #[should_panic(expected = "the assertion is indeed replaced by check and does not panic")]
 fn checkification_really_replaces_assertions_by_checks_that_do_not_immediately_panic() {
     //::std::assert!(true);
@@ -38,8 +38,8 @@ fn error() -> Result<i32, String> {
     Err("bla".to_string())
 }
 
-#[test]
 #[assert2ify(check)]
+#[test]
 #[should_panic]
 // there is no check(let...) so even if checkification is enabled, then
 // assert!(matches!(...)) is converted to assert2::assert(let ...))
@@ -75,9 +75,9 @@ test_all_assertification_styles! {
     }
 }
 
+#[assert2ify(check)]
 #[test]
 #[should_panic(expected = "check failed")]
-#[assert2ify(check)]
 fn checkification_works_for_nested_assertion_in_expression_inside_macro() {
     identity!(
         identity!(

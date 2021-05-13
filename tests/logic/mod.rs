@@ -29,16 +29,16 @@ macro_rules! test_all_assertification_styles {
                 $($body)+
             }
 
+            #[::assert2ify::assert2ify]
             #[test]
             $(#[$attr])?
-            #[::assert2ify::assert2ify]
             fn [< $test_name _with_assertification>] () {
                 $($body)+
             }
 
+            #[::assert2ify::assert2ify(check)]
             #[test]
             $(#[$attr])?
-            #[::assert2ify::assert2ify(check)]
             fn [< $test_name _with_checkification>] () {
                 $($body)+
             }
