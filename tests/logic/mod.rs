@@ -81,7 +81,6 @@ test_all_assertification_styles! {
         assert_eq!(1, 1, "{}", "math broke");
         assert_ne!(1, 2, "{}", "math broke");
 
-
         assert!(true && true);
         assert!(true == true);
         assert_eq!(true, true);
