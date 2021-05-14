@@ -29,16 +29,16 @@ macro_rules! test_all_assertification_styles {
                 $($body)+
             }
 
+            #[::assert2ify::assert2ify]
             #[test]
             $(#[$attr])?
-            #[::assert2ify::assert2ify]
             fn [< $test_name _with_assertification>] () {
                 $($body)+
             }
 
+            #[::assert2ify::assert2ify(check)]
             #[test]
             $(#[$attr])?
-            #[::assert2ify::assert2ify(check)]
             fn [< $test_name _with_checkification>] () {
                 $($body)+
             }
@@ -54,7 +54,7 @@ macro_rules! test_all_assertification_styles {
 
 /// create multiple (assertify, checkify, normal) version of a test that should panic
 macro_rules! test_should_panic {
-    ($test_name:ident, $body:expr) =>  {
+    ($test_name:ident, $body:expr) => {
         test_all_assertification_styles! {
             #[test]
             #[should_panic]
@@ -62,7 +62,7 @@ macro_rules! test_should_panic {
                 $body;
             }
         }
-    }
+    };
 }
 
 #[derive(Eq, PartialEq, Ord, PartialOrd)]
@@ -74,16 +74,22 @@ test_all_assertification_styles! {
     fn assert_pass() {
         assert!(1 == 1);
         assert_eq!(1, 1);
+        assert_ne!(1, 2);
+
 
         assert!(1 == 1, "{}", "math broke");
         assert_eq!(1, 1, "{}", "math broke");
+        assert_ne!(1, 2, "{}", "math broke");
 
         assert!(true && true);
         assert!(true == true);
         assert_eq!(true, true);
+        assert_ne!(false, true);
+
         assert!(true && true, "{}", "logic broke");
         assert!(true == true, "{}", "logic broke");
         assert_eq!(true, true, "{}", "logic broke");
+        assert_ne!(true, false, "{}", "logic broke");
 
         assert!(matches!(Result::<i32, i32>::Ok(10),Ok(10) ));
         assert!(matches!(Result::<i32, i32>::Ok(10),Ok(10)), "{}", "rust broke");
@@ -104,8 +110,20 @@ test_should_panic!(panic_assert1, assert!(1 == 2));
 test_should_panic!(panic_assert2, assert!(1 == 2, "{}", "math broke"));
 test_should_panic!(panic_assert3, assert!(true && false));
 test_should_panic!(panic_assert4, assert!(true && false, "{}", "logic broke"));
-test_should_panic!(panic_assert5, assert!(matches!(Result::<i32, i32>::Err(10),Ok(_))));
-test_should_panic!(panic_assert6, assert!(matches!(Result::<i32, i32>::Err(10),Ok(_)), "{}", "rust broke"));
+test_should_panic!(
+    panic_assert5,
+    assert!(matches!(Result::<i32, i32>::Err(10), Ok(_)))
+);
+test_should_panic!(
+    panic_assert6,
+    assert!(
+        matches!(Result::<i32, i32>::Err(10), Ok(_)),
+        "{}",
+        "rust broke"
+    )
+);
+test_should_panic!(panic_assert7, assert_eq!(true, false, "{}", "logic broke"));
+test_should_panic!(panic_assert8, assert_ne!(1, 1, "{}", "math broke"));
 
 test_all_assertification_styles! {
     #[test]
@@ -113,6 +131,11 @@ test_all_assertification_styles! {
         assert_eq!(&1 , &1);
         assert_eq!(&&1 , &&1);
         assert_eq!(&&&&&&&1 , &&&&&&&1);
+
+        assert_ne!(&1 , &2);
+        assert_ne!(&&1 , &&2);
+        assert_ne!(&&&&&&&2, &&&&&&&1);
+
         assert!(&1 == &1);
         assert!(&&1 == &&1);
         assert!(&&&&&&&1 == &&&&&&&1);
@@ -130,7 +153,6 @@ test_all_assertification_styles! {
         assert!(matches!(& &I(10),I(10)));
     }
 }
-
 
 test_all_assertification_styles! {
     #[test]

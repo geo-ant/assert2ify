@@ -1,15 +1,15 @@
 use std::convert::TryFrom;
 use std::iter::FromIterator;
 
+use crate::detail::idents_from_assign_expression;
+use crate::macro_parsing::macro_expression::MacroExpression;
 use proc_macro2::{Ident, Span};
-use syn::{Expr,  fold, Path, PathArguments, PathSegment, Token, Macro};
+use quote::ToTokens;
 use syn::fold::Fold;
 use syn::parse::{Parse, ParseBuffer};
 use syn::punctuated::Punctuated;
 use syn::spanned::Spanned;
-use quote::ToTokens;
-use crate::detail::idents_from_assign_expression;
-use crate::macro_parsing::macro_expression::MacroExpression;
+use syn::{fold, Expr, Macro, Path, PathArguments, PathSegment, Token};
 
 /// the crate name of the assert2ify crate and not this macro crate itself
 const DEFAULT_ASSERT2IFY_CRATE_NAME: &str = "assert2ify";
@@ -20,10 +20,10 @@ const DEFAULT_ASSERT2IFY_CRATE_NAME: &str = "assert2ify";
 pub enum Style {
     /// means all assertions will be replaced by calls to the
     /// assert macro of the assert2 crate
-    ASSERTIFY,
+    Assertify,
     /// means all assertions will be replace by calls to the check
     /// macro of the assert2 crate
-    CHECKIFY,
+    Checkify,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -37,7 +37,6 @@ pub struct Assert2Ification {
     /// this will usually be "assert2ify", but the user can tell the macro
     /// that the crate was loaded under a different name
     crate_name: String,
-
 }
 
 impl Assert2Ification {
@@ -50,7 +49,9 @@ impl Assert2Ification {
     fn new<S: Into<String>>(configuration: Style, crate_name: Option<S>) -> Assert2Ification {
         Assert2Ification {
             configuration,
-            crate_name: crate_name.map(|n|n.into()).unwrap_or_else(||DEFAULT_ASSERT2IFY_CRATE_NAME.to_string()),
+            crate_name: crate_name
+                .map(|n| n.into())
+                .unwrap_or_else(|| DEFAULT_ASSERT2IFY_CRATE_NAME.to_string()),
         }
     }
 
@@ -65,21 +66,20 @@ impl Assert2Ification {
         };
 
         let replacement_assertion = match self.configuration {
-            Style::ASSERTIFY => {
-                PathSegment {
-                    ident: Ident::new("__assertify", span),
-                    arguments: PathArguments::None,
-                }
-            }
-            Style::CHECKIFY => {
-                PathSegment {
-                    ident: Ident::new("__checkify", span),
-                    arguments: PathArguments::None,
-                }
-            }
+            Style::Assertify => PathSegment {
+                ident: Ident::new("__assertify", span),
+                arguments: PathArguments::None,
+            },
+            Style::Checkify => PathSegment {
+                ident: Ident::new("__checkify", span),
+                arguments: PathArguments::None,
+            },
         };
 
-        let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec! {assert2ify, replacement_assertion});
+        let assert2_segments = Punctuated::<PathSegment, syn::token::Colon2>::from_iter(vec![
+            assert2ify,
+            replacement_assertion,
+        ]);
 
         Path {
             leading_colon: Some(syn::token::Colon2 { spans: [span; 2] }),
@@ -91,7 +91,9 @@ impl Assert2Ification {
 /// Parse this from the arguments given to the attribute like macro
 impl Parse for Assert2Ification {
     fn parse(input: &ParseBuffer) -> Result<Self, syn::parse::Error> {
-        let arguments: Vec<Expr> = Punctuated::<Expr, Token![,]>::parse_terminated(input)?.into_iter().collect();
+        let arguments: Vec<Expr> = Punctuated::<Expr, Token![,]>::parse_terminated(input)?
+            .into_iter()
+            .collect();
 
         // this is a somewhat unelegant way of parsing the potential arguments
         // optional argument: crate=crate_name
@@ -104,35 +106,55 @@ impl Parse for Assert2Ification {
             match args {
                 Expr::Assign(expr_assign) => {
                     // this can only be crate = crate_name
-                    if let Some((lhs,rhs)) = idents_from_assign_expression(&expr_assign) {
+                    if let Some((lhs, rhs)) = idents_from_assign_expression(&expr_assign) {
                         if lhs == "crate" {
                             if crate_name.is_none() {
                                 crate_name = Some(rhs.to_string());
                             } else {
-                                return Err(syn::Error::new(expr_assign.span(), "Crate name was already specified"));
+                                return Err(syn::Error::new(
+                                    expr_assign.span(),
+                                    "Crate name was already specified",
+                                ));
                             }
                         } else {
-                            return Err(syn::Error::new(expr_assign.span(), "Illegal argument. The only legal assignment is crate=..."));
+                            return Err(syn::Error::new(
+                                expr_assign.span(),
+                                "Illegal argument. The only legal assignment is crate=...",
+                            ));
                         }
                     } else {
-                        return Err(syn::Error::new(expr_assign.span(), "Illegal assignment. The only legal assignment is crate=..."));
+                        return Err(syn::Error::new(
+                            expr_assign.span(),
+                            "Illegal assignment. The only legal assignment is crate=...",
+                        ));
                     }
                 }
                 Expr::Path(expr_path) => {
                     if expr_path.path.is_ident("check") {
                         if style.is_none() {
-                            style = Some(Style::CHECKIFY);
+                            style = Some(Style::Checkify);
                         } else {
-                            return Err(syn::Error::new(expr_path.span(), "Illegal argument. Assertification style was already specified"));
+                            return Err(syn::Error::new(
+                                expr_path.span(),
+                                "Illegal argument. Assertification style was already specified",
+                            ));
                         }
                     } else {
-                        return Err(syn::Error::new(expr_path.span(), "Illegal argument. Did you mean `check`?"));
+                        return Err(syn::Error::new(
+                            expr_path.span(),
+                            "Illegal argument. Did you mean `check`?",
+                        ));
                     }
                 }
-                _ => { return Err(syn::Error::new(args.span(), "Invalid argument")); }
+                _ => {
+                    return Err(syn::Error::new(args.span(), "Invalid argument"));
+                }
             }
         }
-        Ok(Assert2Ification::new(style.unwrap_or(Style::ASSERTIFY), crate_name))
+        Ok(Assert2Ification::new(
+            style.unwrap_or(Style::Assertify),
+            crate_name,
+        ))
     }
 }
 
@@ -176,7 +198,7 @@ impl Fold for Assert2Ification {
                     if let Ok(nested_expr) = syn::parse2::<Expr>(other_macro.tokens.clone()) {
                         let folded = self.fold_expr(nested_expr);
                         Macro {
-                            tokens : folded.to_token_stream(),
+                            tokens: folded.to_token_stream(),
                             ..other_macro
                         }
                     } else {

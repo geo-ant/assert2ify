@@ -1,6 +1,6 @@
 [package]
 name = "assert2ify"
-version = "0.1.0"
+version = "0.1.0-alpha1"
 authors = ["geo-ant <geos.blog@posteo.de>"]
 edition = "2018"
 license = "BSD-2-Clause"
@@ -11,7 +11,7 @@ license = "BSD-2-Clause"
 members = ["assert2ify-macros"]
 
 [dependencies]
-assert2ify-macros = {path="./assert2ify-macros", version = "0.1.0"}
+assert2ify-macros = {path="./assert2ify-macros", version = "0.1.0-alpha1"}
 assert2 = "0.3"
 
 [dev-dependencies]
