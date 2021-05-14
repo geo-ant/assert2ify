@@ -20,10 +20,10 @@ const DEFAULT_ASSERT2IFY_CRATE_NAME: &str = "assert2ify";
 pub enum Style {
     /// means all assertions will be replaced by calls to the
     /// assert macro of the assert2 crate
-    ASSERTIFY,
+    Assertify,
     /// means all assertions will be replace by calls to the check
     /// macro of the assert2 crate
-    CHECKIFY,
+    Checkify,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -65,13 +65,13 @@ impl Assert2Ification {
         };
 
         let replacement_assertion = match self.configuration {
-            Style::ASSERTIFY => {
+            Style::Assertify => {
                 PathSegment {
                     ident: Ident::new("__assertify", span),
                     arguments: PathArguments::None,
                 }
             }
-            Style::CHECKIFY => {
+            Style::Checkify => {
                 PathSegment {
                     ident: Ident::new("__checkify", span),
                     arguments: PathArguments::None,
@@ -121,7 +121,7 @@ impl Parse for Assert2Ification {
                 Expr::Path(expr_path) => {
                     if expr_path.path.is_ident("check") {
                         if style.is_none() {
-                            style = Some(Style::CHECKIFY);
+                            style = Some(Style::Checkify);
                         } else {
                             return Err(syn::Error::new(expr_path.span(), "Illegal argument. Assertification style was already specified"));
                         }
@@ -132,7 +132,7 @@ impl Parse for Assert2Ification {
                 _ => { return Err(syn::Error::new(args.span(), "Invalid argument")); }
             }
         }
-        Ok(Assert2Ification::new(style.unwrap_or(Style::ASSERTIFY), crate_name))
+        Ok(Assert2Ification::new(style.unwrap_or(Style::Assertify), crate_name))
     }
 }
 
