@@ -36,9 +36,9 @@ impl AssertionMacro {
     pub fn assert2ify_with(self, assert2_macro_path: syn::Path) -> Macro {
         let info_args = self.info_args;
 
-        let tokens  = match self.assertion {
+        let tokens = match self.assertion {
             Assertion::AssertBinary { lhs, operator, rhs } => {
-                 quote_spanned! {self.span => #lhs #operator #rhs, #(#info_args),* }
+                quote_spanned! {self.span => #lhs #operator #rhs, #(#info_args),* }
             }
             Assertion::AssertUnary { expr } => {
                 quote_spanned! {self.span => #expr, #(#info_args),* }
@@ -47,10 +47,11 @@ impl AssertionMacro {
 
         Macro {
             path: assert2_macro_path,
-            bang_token: syn::token::Bang { spans: [self.span; 1] },
-            delimiter: MacroDelimiter::Paren(syn::token::Paren { span:self.span }),
+            bang_token: syn::token::Bang {
+                spans: [self.span; 1],
+            },
+            delimiter: MacroDelimiter::Paren(syn::token::Paren { span: self.span }),
             tokens,
         }
     }
 }
-

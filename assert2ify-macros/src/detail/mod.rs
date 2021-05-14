@@ -1,7 +1,5 @@
 use proc_macro2::Span;
-use syn::{BinOp, ExprAssign, Expr};
-
-
+use syn::{BinOp, Expr, ExprAssign};
 
 /// enumeration that names all the standard assertions that can
 /// be handled with this crate
@@ -36,8 +34,8 @@ impl MacroKind {
     /// is an assertion macro of any kind
     pub fn is_assertion(&self) -> bool {
         match self {
-            Self::Assertion(_) => {true}
-            Self::Other => {false}
+            Self::Assertion(_) => true,
+            Self::Other => false,
         }
     }
 
@@ -45,10 +43,10 @@ impl MacroKind {
     /// is a binary assertion (`assert_eq!` or `assert_ne!`)
     pub fn is_binary_assertion(&self) -> bool {
         match self {
-            Self::Assertion(StandardLibraryAssertion::AssertEq) => {true}
-            Self::Assertion(StandardLibraryAssertion::AssertNe) => {true}
-            Self::Assertion(StandardLibraryAssertion::Assert) => {false}
-            Self::Other => {false}
+            Self::Assertion(StandardLibraryAssertion::AssertEq) => true,
+            Self::Assertion(StandardLibraryAssertion::AssertNe) => true,
+            Self::Assertion(StandardLibraryAssertion::Assert) => false,
+            Self::Other => false,
         }
     }
 
@@ -60,12 +58,16 @@ impl MacroKind {
     /// If the macro kind is a binary assertion, then this returns
     /// the binary operator used to compare left and right argument.
     /// Otherwise returns None.
-    pub fn binary_operator(&self, span : Span) -> Option<BinOp> {
+    pub fn binary_operator(&self, span: Span) -> Option<BinOp> {
         match self {
-            Self::Assertion(StandardLibraryAssertion::AssertEq) => { Some(BinOp::Eq(syn::token::EqEq { spans: [span;2] }))}
-            Self::Assertion(StandardLibraryAssertion::AssertNe) => {Some(BinOp::Ne(syn::token::Ne { spans: [span;2] }))}
-            Self::Assertion(StandardLibraryAssertion::Assert) => { None}
-            Self::Other => { None}
+            Self::Assertion(StandardLibraryAssertion::AssertEq) => {
+                Some(BinOp::Eq(syn::token::EqEq { spans: [span; 2] }))
+            }
+            Self::Assertion(StandardLibraryAssertion::AssertNe) => {
+                Some(BinOp::Ne(syn::token::Ne { spans: [span; 2] }))
+            }
+            Self::Assertion(StandardLibraryAssertion::Assert) => None,
+            Self::Other => None,
         }
     }
 }
@@ -81,12 +83,11 @@ impl MacroKind {
 /// If `assert!` and the other macros in scope do not point to the standard library asserts,
 /// then we have to way to check that. They will be classified as std asserts/matches as well.
 /// If the std library was used as something else, then there is also no way to check that...
-pub fn infer_macro_kind_from_path(path : &syn::Path) -> MacroKind {
-
-    let segments : Vec<syn::Ident> = path.segments.iter().map(|s|s.ident.clone()).collect();
+pub fn infer_macro_kind_from_path(path: &syn::Path) -> MacroKind {
+    let segments: Vec<syn::Ident> = path.segments.iter().map(|s| s.ident.clone()).collect();
 
     // helper function
-    fn macro_kind(ident : &syn::Ident) -> MacroKind {
+    fn macro_kind(ident: &syn::Ident) -> MacroKind {
         let assert_eq = "assert_eq";
         let assert_ne = "assert_ne";
         let assert = "assert";
@@ -118,8 +119,11 @@ pub fn infer_macro_kind_from_path(path : &syn::Path) -> MacroKind {
 /// This function extracts the identifiers (lhs, rhs) out of an assignment operation lhs = rhs.
 /// If the left and right hand side are not identifiers, then this returns None.
 pub fn idents_from_assign_expression(assignment: &ExprAssign) -> Option<(syn::Ident, syn::Ident)> {
-    if let (Some(lhs), Some(rhs)) = (ident_from_box_expr(assignment.left.clone()), ident_from_box_expr(assignment.right.clone())) {
-        Some((lhs,rhs))
+    if let (Some(lhs), Some(rhs)) = (
+        ident_from_box_expr(assignment.left.clone()),
+        ident_from_box_expr(assignment.right.clone()),
+    ) {
+        Some((lhs, rhs))
     } else {
         None
     }
@@ -128,15 +132,15 @@ pub fn idents_from_assign_expression(assignment: &ExprAssign) -> Option<(syn::Id
 /// helper function to extract an identifier from an expression IFF the expression
 /// is a path of length exactly one. Then this single path segment is returned as the
 /// identifier. Otherwise None is returned.
-fn ident_from_box_expr(expr : Box<Expr>) -> Option<syn::Ident> {
+fn ident_from_box_expr(expr: Box<Expr>) -> Option<syn::Ident> {
     match *expr {
-        syn::Expr::Path(syn::ExprPath{ref path, ..}) => {
-            if path.segments.len() ==1 {
+        syn::Expr::Path(syn::ExprPath { ref path, .. }) => {
+            if path.segments.len() == 1 {
                 Some(path.segments[0].ident.clone())
             } else {
                 None
             }
         }
-        _ => {None}
+        _ => None,
     }
 }

@@ -7,14 +7,16 @@ mod logic;
 #[should_panic(expected = "check failed")]
 pub(crate) fn assertion_is_replaced_in_nested_code() {
     let v = vec![1, 2, 3];
-    for _ in 1..10
-    {
-        if 20 > 19
-        {
-            assert_ne!(v.len(),
-                       3,
-                       "these {} {} {}", 3,
-                       "message(s)", "are now parsed");
+    for _ in 1..10 {
+        if 20 > 19 {
+            assert_ne!(
+                v.len(),
+                3,
+                "these {} {} {}",
+                3,
+                "message(s)",
+                "are now parsed"
+            );
         }
     }
 }
@@ -79,12 +81,8 @@ test_all_assertification_styles! {
 #[test]
 #[should_panic(expected = "check failed")]
 fn checkification_works_for_nested_assertion_in_expression_inside_macro() {
-    identity!(
-        identity!(
-            identity!(
-                assert_eq!(2,3))));
+    identity!(identity!(identity!(assert_eq!(2, 3))));
 }
-
 
 // this assertion will not be replaced, because my macro parsing
 // only works when a macro contains an expression. But we make sure

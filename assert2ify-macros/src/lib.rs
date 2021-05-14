@@ -1,15 +1,15 @@
 use proc_macro::TokenStream;
 
-use quote::{quote};
-use syn::{ ItemFn, parse_macro_input};
-use syn::fold::{Fold};
+use quote::quote;
+use syn::fold::Fold;
+use syn::{parse_macro_input, ItemFn};
 
 use assert2ification::Assert2Ification;
 use syn::spanned::Spanned;
 
 mod assert2ification;
-mod macro_parsing;
 mod detail;
+mod macro_parsing;
 
 //TODO: https://github.com/dtolnay/syn/blob/master/examples/trace-var/trace-var/src/lib.rs
 //TODO: read this and understand how the syntax tree traversal is implemented and how I can use it
@@ -26,8 +26,19 @@ pub fn assert2ify(args: TokenStream, input: TokenStream) -> TokenStream {
     // which is why this works
     // this will not work 100% reliably because someone might use this thing under a different name,
     // but it does guard against accidental duplication
-    if let Some(other_assertify_macro) = input.attrs.iter().find(|attr|attr.path.segments.last().map(|s|s.ident=="assert2ify").unwrap_or(false)) {
-        return syn::Error::new(other_assertify_macro.span(),"Duplicate attribute. This attribute must only be specified once for each function").into_compile_error().into();
+    if let Some(other_assertify_macro) = input.attrs.iter().find(|attr| {
+        attr.path
+            .segments
+            .last()
+            .map(|s| s.ident == "assert2ify")
+            .unwrap_or(false)
+    }) {
+        return syn::Error::new(
+            other_assertify_macro.span(),
+            "Duplicate attribute. This attribute must only be specified once for each function",
+        )
+        .into_compile_error()
+        .into();
     }
 
     // Parse the list of variables the user wanted to print.

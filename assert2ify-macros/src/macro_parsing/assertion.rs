@@ -15,19 +15,13 @@ pub enum Assertion {
     /// This means any other kind of assertion on one expression,
     /// notably also assertions on binary expressions like `assert!(a==b)`
     /// or `assert!(v.len() < 5)`.
-    AssertUnary {
-        expr: Expr,
-    },
+    AssertUnary { expr: Expr },
 }
 
 impl Assertion {
     /// Convenience constructor for binary assertions
     pub fn new_binary(lhs: Expr, operator: syn::BinOp, rhs: Expr) -> Self {
-        Self::AssertBinary {
-            lhs,
-            operator,
-            rhs,
-        }
+        Self::AssertBinary { lhs, operator, rhs }
     }
     /// convenience case for a general assertion case on one argument
     pub fn new_assert(expr: Expr) -> Self {
