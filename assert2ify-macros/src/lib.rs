@@ -5,7 +5,7 @@ use syn::fold::Fold;
 use syn::{parse_macro_input, ItemFn};
 
 use assert2ification::Assert2Ification;
-use syn::spanned::Spanned;
+use crate::detail::{apply_unused_attributes_workaround, check_redefinition_of_assert2ify};
 
 mod assert2ification;
 mod detail;
@@ -18,27 +18,15 @@ mod macro_parsing;
 pub fn assert2ify(args: TokenStream, input: TokenStream) -> TokenStream {
     // See this example by dtolnay on how to traverse a syntax tree and replace nodes
     // https://github.com/dtolnay/syn/blob/master/examples/trace-var/trace-var/src/lib.rs
-    let input = parse_macro_input!(input as ItemFn);
+    let func = parse_macro_input!(input as ItemFn);
 
-    // guard this agains redefinition of this attribute
-    // if so, report an error.
-    // Remark: this attribute itself will not be visible in the list of attributes of the function,
-    // which is why this works
-    // this will not work 100% reliably because someone might use this thing under a different name,
-    // but it does guard against accidental duplication
-    if let Some(other_assertify_macro) = input.attrs.iter().find(|attr| {
-        attr.path
-            .segments
-            .last()
-            .map(|s| s.ident == "assert2ify")
-            .unwrap_or(false)
-    }) {
-        return syn::Error::new(
-            other_assertify_macro.span(),
-            "Duplicate attribute. This attribute must only be specified once for each function",
-        )
-        .into_compile_error()
-        .into();
+    // apply a workaround that will suppress clippy and compiler warnings when
+    // should_panic or ignore are encountered in tests. See the doc of the function for more info
+    let func = apply_unused_attributes_workaround(func);
+
+    // guard this macro (to some degree) against having this attribute specified twice
+    if let Err(error) = check_redefinition_of_assert2ify(&func) {
+        return error.into_compile_error().into();
     }
 
     // Parse the list of variables the user wanted to print.
@@ -49,7 +37,8 @@ pub fn assert2ify(args: TokenStream, input: TokenStream) -> TokenStream {
     // that allows us to traverse nodes and replace them with anything else.
     // Fold just allows us to replace the node with a node of the same type,
     // (i.e. macro with macro), which is fine for my use case
-    let output = assert2ification.fold_item_fn(input);
+    let output = assert2ification.fold_item_fn(func);
 
     TokenStream::from(quote!(#output))
 }
+
