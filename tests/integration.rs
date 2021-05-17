@@ -1,5 +1,6 @@
 use assert2ify::assert2ify;
 
+
 mod logic;
 
 #[test]
@@ -23,7 +24,7 @@ pub(crate) fn assertion_is_replaced_in_nested_code() {
 
 #[test]
 #[should_panic(expected = "the assertion is indeed replaced by check and does not panic")]
-#[assert2ify(check)]
+#[assert2ify(check, crate = ::assert2ify)]
 fn checkification_really_replaces_assertions_by_checks_that_do_not_immediately_panic() {
     //::std::assert!(true);
     let v = vec![1, 2, 3];
