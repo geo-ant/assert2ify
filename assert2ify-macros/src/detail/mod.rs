@@ -1,7 +1,6 @@
 use proc_macro2::Span;
-use syn::{BinOp, Expr, ExprAssign, ItemFn, Attribute};
 use syn::spanned::Spanned;
-
+use syn::{Attribute, BinOp, Expr, ExprAssign, ItemFn};
 
 /// enumeration that names all the standard assertions that can
 /// be handled with this crate
@@ -159,8 +158,15 @@ fn ident_from_box_expr(expr: Box<Expr>) -> Option<syn::Ident> {
 /// See [this topic](https://users.rust-lang.org/t/proc-macro-attribute-makes-compiler-shout-at-me-when-should-panic-is-involved/59816/9)
 /// in the users.rust-lang.org forum.
 pub fn apply_unused_attributes_workaround(mut func: ItemFn) -> ItemFn {
-    if func.attrs.iter().find(|attr|is_attribute_name(attr, "test")).is_none() {
-        func.attrs.retain(|attr|!is_attribute_name(attr, "should_panic")&& ! is_attribute_name(attr, "ignore"));
+    if func
+        .attrs
+        .iter()
+        .find(|attr| is_attribute_name(attr, "test"))
+        .is_none()
+    {
+        func.attrs.retain(|attr| {
+            !is_attribute_name(attr, "should_panic") && !is_attribute_name(attr, "ignore")
+        });
     }
     func
 }
@@ -169,11 +175,17 @@ pub fn apply_unused_attributes_workaround(mut func: ItemFn) -> ItemFn {
 /// We only compare the first element of the path (of its path), so do not give strings that have "::" in them
 /// This is useful to see if the attribute is
 /// test, should_panic, or ignore. But nothing with more complex paths
-fn is_attribute_name(attr : &Attribute, name : &str) -> bool{
-    if name.contains("::") || name.contains(":") {
-        panic!("Give only a single name for the attribute. This function does not deal with paths!");
+fn is_attribute_name(attr: &Attribute, name: &str) -> bool {
+    if name.contains("::") || name.contains(':') {
+        panic!(
+            "Give only a single name for the attribute. This function does not deal with paths!"
+        );
     }
-   attr.path.segments.first().map(|pathseg|pathseg.ident == name).unwrap_or(false)
+    attr.path
+        .segments
+        .first()
+        .map(|pathseg| pathseg.ident == name)
+        .unwrap_or(false)
 }
 
 /// helper function to guard the attribute against redefinition of the same attribute
@@ -182,7 +194,7 @@ fn is_attribute_name(attr : &Attribute, name : &str) -> bool{
 /// which is why this works
 /// this will not work 100% reliably because someone might use this thing under a different name,
 /// but it does guard against accidental duplication
-pub fn check_redefinition_of_assert2ify(func : &ItemFn) -> Result<(),syn::Error> {
+pub fn check_redefinition_of_assert2ify(func: &ItemFn) -> Result<(), syn::Error> {
     if let Some(other_assertify_macro) = func.attrs.iter().find(|attr| {
         attr.path
             .segments

@@ -4,8 +4,8 @@ use quote::quote;
 use syn::fold::Fold;
 use syn::{parse_macro_input, ItemFn};
 
-use assert2ification::Assert2Ification;
 use crate::detail::{apply_unused_attributes_workaround, check_redefinition_of_assert2ify};
+use assert2ification::Assert2Ification;
 
 mod assert2ification;
 mod detail;
@@ -38,4 +38,3 @@ pub fn assert2ify(args: TokenStream, input: TokenStream) -> TokenStream {
 
     TokenStream::from(quote!(#output))
 }
-

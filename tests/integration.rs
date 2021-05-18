@@ -1,6 +1,5 @@
 use assert2ify::assert2ify;
 
-
 mod logic;
 
 #[test]
