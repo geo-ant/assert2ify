@@ -3,6 +3,11 @@ name = "assert2ify-macros"
 version = "0.1.0-alpha1"
 authors = ["geo-ant <geos.blog@posteo.de>"]
 edition = "2018"
+homepage = "https://github.com/geo-ant/assert2ify"
+repository = "https://github.com/geo-ant/assert2ify"
+categories = ["development-tools::testing","development-tools::debugging"]
+description = "Macros for the assert2ify crate"
+keywords = ["assert2","assert","assertion","check","match"]
 license = "BSD-2-Clause"
 
 

@@ -3,6 +3,12 @@ name = "assert2ify"
 version = "0.1.0-alpha1"
 authors = ["geo-ant <geos.blog@posteo.de>"]
 edition = "2018"
+homepage = "https://github.com/geo-ant/assert2ify"
+repository = "https://github.com/geo-ant/assert2ify"
+categories = ["development-tools::testing","development-tools::debugging"]
+description = "A one-liner solution to replace assertions in tests by the expressive assertions of the assert2 crate"
+readme = "README.md"
+keywords = ["assert2","assert","assertion","check","match"]
 license = "BSD-2-Clause"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html

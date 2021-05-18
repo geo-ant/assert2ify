@@ -2,8 +2,8 @@ use assert2ify::assert2ify;
 
 mod logic;
 
-#[assert2ify(check, crate = assert2ify)]
 #[test]
+#[assert2ify(check, crate = assert2ify)]
 #[should_panic(expected = "check failed")]
 pub(crate) fn assertion_is_replaced_in_nested_code() {
     let v = vec![1, 2, 3];
@@ -21,9 +21,9 @@ pub(crate) fn assertion_is_replaced_in_nested_code() {
     }
 }
 
-#[assert2ify(check)]
 #[test]
 #[should_panic(expected = "the assertion is indeed replaced by check and does not panic")]
+#[assert2ify(check, crate = ::assert2ify)]
 fn checkification_really_replaces_assertions_by_checks_that_do_not_immediately_panic() {
     //::std::assert!(true);
     let v = vec![1, 2, 3];
@@ -77,8 +77,8 @@ test_all_assertification_styles! {
     }
 }
 
-#[assert2ify(check)]
 #[test]
+#[assert2ify(check)]
 #[should_panic(expected = "check failed")]
 fn checkification_works_for_nested_assertion_in_expression_inside_macro() {
     identity!(identity!(identity!(assert_eq!(2, 3))));
