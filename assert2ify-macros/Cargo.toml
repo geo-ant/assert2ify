@@ -7,7 +7,6 @@ homepage = "https://github.com/geo-ant/assert2ify"
 repository = "https://github.com/geo-ant/assert2ify"
 categories = ["development-tools::testing","development-tools::debugging"]
 description = "Macros for the assert2ify crate"
-readme = "README.md"
 keywords = ["assert2","assert","assertion","check","match"]
 license = "BSD-2-Clause"
 
